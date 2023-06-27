@@ -1,0 +1,26 @@
+---
+version: "3.9"
+x-dev:
+  &service-dev
+  image: registry.fly.io/<%= app_name %>:latest
+  environment:
+    - APP_EMAIL_FROM=debug@example.com
+    - APP_HOST=localhost
+    - APP_PORT=3000
+    - DATABASE_URL=postgresql://postgres:postgres@db:5432
+    - WEB_CONSOLE_IPS=172.16.0.0/12
+  ports:
+    - "127.0.0.1:3000:3000/tcp"
+  working_dir: /app
+  tmpfs:
+    - /app/tmp:mode=755,uid=1000,gid=1000
+
+services:
+  dev:
+    <<: *service-dev
+    depends_on:
+      - db
+    init: true
+    volumes:
+      - .:/app:cached
+      - /var/run/docker.sock:/var/run/docker-host.sock

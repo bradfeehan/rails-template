@@ -1,0 +1,36 @@
+---
+name: Test
+"on": push
+
+permissions:
+  contents: read
+
+env:
+  APP_EMAIL_FROM: test@example.com
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432
+  APP_HOST: localhost
+  APP_PORT: 3000
+
+jobs:
+  rspec:
+    name: RSpec
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:15.3-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432/tcp
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - run: bin/rails db:reset RAILS_ENV=test
+      - run: bin/rspec

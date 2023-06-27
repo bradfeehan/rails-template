@@ -1,0 +1,7 @@
+---
+extends: default
+ignore: |
+  /config/cucumber.yml
+  /config/storage.yml
+  /charts/
+  /vendor/

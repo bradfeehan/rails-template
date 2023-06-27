@@ -1,0 +1,100 @@
+---
+name: Lint
+"on": push
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    name: GitHub Actions
+    runs-on: ubuntu-latest
+    env:
+      REPO: https://github.com/rhysd/actionlint
+      VERSION: 1.6.25
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup actionlint
+        # yamllint disable rule:line-length
+        run: |
+          set -euo pipefail && \
+          echo "::add-matcher::.github/matchers/actionlint.json" && \
+          echo "Downloading '${REPO}/releases/download/v${VERSION}/actionlint_${VERSION}_linux_amd64.tar.gz'..."
+          curl -L "${REPO}/releases/download/v${VERSION}/actionlint_${VERSION}_linux_amd64.tar.gz" \
+          | tar xz -C '/usr/local/bin' && \
+          echo "actionlint -version:" &&
+          actionlint -version
+        # yamllint enable rule:line-length
+
+      - run: actionlint -color
+
+  filenames:
+    name: File names
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v3
+      - run: bin/filename-check
+
+  hadolint:
+    name: Hadolint
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hadolint/hadolint-action@v3.1.0
+
+  json-schema:
+    name: JSON Schema
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm install -g v8r
+      - run: v8r
+
+  rubocop:
+    name: Rubocop
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    env:
+      BUNDLE_DEPLOYMENT: true
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - name: Set up rubocop
+        run: |
+          echo "::add-matcher::.github/matchers/rubocop.json"
+      - run: bundle exec rubocop
+
+  stylelint:
+    name: Stylelint
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+      - name: Set up scss-lint
+        run: |
+          npm install --global stylelint stylelint-config-standard-scss
+          echo "::add-matcher::.github/matchers/stylelint.json"
+      - run: stylelint "**/*.css" "**/*.scss"
+
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ludeeus/action-shellcheck@2.0.0
+
+  yamllint:
+    name: YAMLlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ibiqlik/action-yamllint@v3

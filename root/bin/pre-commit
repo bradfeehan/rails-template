@@ -1,0 +1,217 @@
+#!/bin/bash
+#
+# To install, link to .git/hooks/pre-commit:
+#
+#   ln -s ../../bin/pre-commit .git/hooks
+set -euo pipefail
+IFS=$'\n\t'
+
+SOURCE="${BASH_SOURCE[0]:-$0}";
+while [[ -L "${SOURCE}" ]]; do
+  # resolve $SOURCE until the file is no longer a symlink
+  ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")" &> /dev/null && pwd -P 2> /dev/null)"
+  SOURCE="$(readlink -- "${SOURCE}")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+  [[ $SOURCE != /* ]] && SOURCE="${ROOT}/${SOURCE}"
+done
+ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")/.." &> /dev/null && pwd -P 2> /dev/null)"
+unset SOURCE
+
+WORKTREE_NAME='_tmp_precommit_workdir'
+WORKING_DIRECTORY="${ROOT}/.git/${WORKTREE_NAME}"
+
+FAILURES=()
+
+in_path() {
+  local command="$1"
+  which "${command}" > /dev/null 2>&1
+}
+
+function join_by {
+  local delimiter="${1:-}" first="${2:-}"
+  if shift 2; then
+    printf %s "${first}" "${@/#/${delimiter}}"
+  fi
+}
+
+lint_run() {
+  local name="$1"
+  local check_command="$2"
+  local installation_instructions="$3"
+  shift 3
+  local command=("$@")
+
+  if eval "${check_command}"; then
+    if lint_exec "${command[@]}"; then
+      lint_success "${name}"
+    else
+      lint_failure "${name}"
+    fi
+  else
+    lint_missing "${name}" "${installation_instructions}"
+  fi
+}
+
+lint_exec() {
+  local command=("$@") status
+  set -e
+  pushd "${WORKING_DIRECTORY}" > /dev/null
+  "${command[@]}" && status=$? || status=$?
+  popd > /dev/null
+  return "${status}"
+}
+
+println_color() {
+  local color_code="$1"
+  shift
+  local lines=("$@")
+
+  local colorise="\033[${color_code}m" reset_color="\033[0m"
+  printf "${colorise}%s${reset_color}\n" "${lines[@]}"
+}
+
+lint_success() {
+  local name="$1"
+  println_color 32 "✅ Lint passed for '${name}'"
+}
+
+lint_failure() {
+  local name="$1"
+  println_color 31 "❌ Lint failed for '${name}'"
+  FAILURES+=("${name}")
+}
+
+lint_missing() {
+  local name="$1"
+  local installation_instructions="$2"
+  println_color 33 \
+    "⚠️  Missing lint tool '${name}'" \
+    "   Install it with ${installation_instructions}"
+}
+
+
+setup() {
+  local commit tree
+
+  if [[ -d "${WORKING_DIRECTORY}" ]]; then
+    println_color 31 \
+      'The script running pre-commit hooks maintains a second working directory to run checks on.' \
+      "This working directory is: ${WORKING_DIRECTORY}" \
+      "This directory exists, but the pre-commit script can't find itself there." \
+      'Check the contents of this directory and remove it to try again.'
+    exit 1
+  fi
+
+  pushd "${ROOT}" > /dev/null
+  trap cleanup EXIT
+  set -e
+
+  tree="$(git -C "${ROOT}" write-tree)"
+  commit="$(git -C "${ROOT}" commit-tree -p HEAD --no-gpg-sign -m 'pre-commit hook index commit' "${tree}")"
+
+  remove_worktree
+  env -i git -C "${ROOT}" worktree add --checkout --detach "${WORKING_DIRECTORY}" "${commit}" > /dev/null
+}
+
+remove_worktree() {
+  if [[ -d "${ROOT}/.git/worktrees/${WORKTREE_NAME}" ]]; then
+    env -i git -C "${ROOT}" worktree remove "${WORKTREE_NAME}"
+  fi
+}
+
+cleanup() {
+  set +eo pipefail
+
+  remove_worktree
+
+  if [[ -d "${WORKING_DIRECTORY}" ]]; then
+    rm -rf "${WORKING_DIRECTORY}"
+  fi
+
+  popd > /dev/null
+}
+
+setup
+
+# Check the index for whitespace errors and conflict markers
+#
+# From git-diff-index(1):
+#
+# > --check
+# >     Warn if changes introduce conflict markers or whitespace errors. What
+# >     are considered whitespace errors is controlled by core.whitespace
+# >     configuration. By default, trailing whitespaces (including lines that
+# >     consist solely of whitespaces) and a space character that is
+# >     immediately followed by a tab character inside the initial indent of
+# >     the line are considered whitespace errors. Exits with non-zero status
+# >     if problems are found.
+lint_run 'Git' 'in_path git' 'brew install git' env -i git -C "${ROOT}" diff-index --check --cached HEAD --
+
+# Check for any "forbidden" files
+lint_run 'File names' 'in_path bash' 'brew install bash' "${ROOT}/bin/filename-check" "${WORKING_DIRECTORY}"
+
+lint_run 'actionlint' 'in_path actionlint' 'brew install actionlint' actionlint -color
+lint_run 'Hadolint' 'in_path hadolint' 'brew install hadolint' hadolint Dockerfile
+lint_run 'JSON Schema' 'in_path v8r' 'npm install -g v8r' bash -c 'v8r 2> /dev/null'
+lint_run 'Rubocop' 'bundle check > /dev/null' 'bundle install' env BUNDLE_GEMFILE="${ROOT}/Gemfile" bundle exec rubocop --format quiet
+lint_run 'ShellCheck' 'in_path shellcheck' 'brew install shellcheck' bash -c "\
+  { \
+    find . \
+      -type f \
+      '(' \
+        -name '*.bash' \
+        -o -name '.bashrc' \
+        -o -name 'bashrc' \
+        -o -name '.bash_aliases' \
+        -o -name '.bash_completion' \
+        -o -name '.bash_login' \
+        -o -name '.bash_logout' \
+        -o -name '.bash_profile' \
+        -o -name 'bash_profile' \
+        -o -name '*.ksh' \
+        -o -name 'suid_profile' \
+        -o -name '*.zsh' \
+        -o -name '.zlogin' \
+        -o -name 'zlogin' \
+        -o -name '.zlogout' \
+        -o -name 'zlogout' \
+        -o -name '.zprofile' \
+        -o -name 'zprofile' \
+        -o -name '.zsenv' \
+        -o -name 'zsenv' \
+        -o -name '.zshrc' \
+        -o -name 'zshrc' \
+        -o -name '*.sh' \
+        -o -path '*/.profile' \
+        -o -path '*/profile' \
+        -o -name '*.shlib' \
+      ')' \
+      -not '(' \
+        -path './vendor/*' \
+      ')' \
+      ; \
+    grep \
+      --extended-regexp \
+      --files-with-matches \
+      --recursive \
+      '#!/bin/(ba)?sh' \
+      bin \
+  ; } \
+  | xargs shellcheck"
+lint_run 'Stylelint' 'in_path stylelint' 'npm install -g stylelint stylelint-config-standard-scss' \
+  stylelint '**/*.css' '**/*.scss'
+lint_run 'YAMLlint' 'in_path yamllint' 'brew install yamllint' yamllint --config-file "${WORKING_DIRECTORY}/.yamllint.yml" .
+
+if [[ "${#FAILURES[@]}" -ne 0 ]]; then
+  if [[ ${#FAILURES[@]} -eq 1 ]]; then
+    plural=''
+  else
+    plural='s'
+  fi
+  failures_string="$(join_by ', ' "${FAILURES[@]}")"
+  printf '%s\n' \
+    '' \
+    "❌ ${#FAILURES[@]} linter${plural} failed (${failures_string})" \
+    'Fix the errors above or commit with --no-verify to skip pre-commit checks'
+  exit 1
+fi

@@ -1,0 +1,37 @@
+---
+version: "3.9"
+services:
+  web:
+    image: registry.fly.io/<%= app_name %>:latest
+    build:
+      context: .
+      cache_from:
+        - registry.fly.io/<%= app_name %>:latest
+    command: [bundle, exec, rails, server]
+    depends_on:
+      - db
+    stop_grace_period: "3s"
+    tty: true
+    healthcheck:
+      test: "curl localhost:3000/"
+      interval: "60s"
+      timeout: "3s"
+      start_period: "5s"
+      retries: 3
+    environment:
+      - APP_EMAIL_FROM=dev@example.com
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432
+    ports:
+      - "127.0.0.1:3000:3000/tcp"
+    tmpfs:
+      - /app/tmp:mode=755,uid=1000,gid=1000
+  db:
+    image: postgres:15.3-alpine
+    stop_grace_period: "3s"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - "postgres:/var/lib/postgresql/data"
+
+volumes:
+  postgres: {}

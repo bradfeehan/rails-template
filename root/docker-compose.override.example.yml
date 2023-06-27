@@ -1,0 +1,18 @@
+---
+# To link in dev:
+#
+#     ln -s docker-compose.override{.example,}.yml
+#
+version: "3.9"
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432/tcp"
+  web:
+    environment:
+      - EDITOR
+      - APP_HOST=localhost
+      - APP_PORT=3000
+      - WEB_CONSOLE_IPS=172.16.0.0/12
+    volumes:
+      - .:/app:cached

@@ -1,0 +1,6 @@
+---
+patterns:
+  - .github/dependabot.yml
+  - .github/workflows/*.yml
+  - .v8rrc.yml
+  - .yamllint.yml

@@ -1,0 +1,38 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+SOURCE="${BASH_SOURCE[0]:-$0}";
+while [[ -L "${SOURCE}" ]]; do
+  # resolve $SOURCE until the file is no longer a symlink
+  ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")" &> /dev/null && pwd -P 2> /dev/null)"
+  SOURCE="$(readlink -- "${SOURCE}")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+  [[ $SOURCE != /* ]] && SOURCE="${ROOT}/${SOURCE}"
+done
+DEFAULT_ROOT="$(cd -P -- "$(dirname -- "${SOURCE}")/.." &> /dev/null && pwd -P 2> /dev/null)"
+unset SOURCE
+
+ROOT="${1:-${DEFAULT_ROOT}}"
+
+list_forbidden_files() {
+  find "${ROOT}" \
+    -type f \
+    -not '(' \
+      -path './vendor/*' \
+    ')' \
+    '(' \
+      -false \
+      -o '(' -name '*.yaml' ')' \
+      -o -name '.*[A-Z].*' \
+    ')'
+}
+
+forbidden_files="$(list_forbidden_files)"
+
+if [[ "${forbidden_files}" ]]; then
+  printf '%s\n' \
+    'The following files match a forbidden file pattern:' \
+    "${forbidden_files}"
+  false
+fi
