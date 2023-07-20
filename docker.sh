@@ -352,6 +352,7 @@ sleep 0.3
 mkdir "${root}"
 sleep 0.3
 cd "${root}"
+printf '%s\n' '' rails-template-test ''
 docker run --rm \
   -v "${root}:/app" \
   -v "${HOME}/Code/bradfeehan/rails-template:/template:ro" \
@@ -359,6 +360,7 @@ docker run --rm \
   --platform linux/amd64 \
   -e DATABASE_URL='postgresql://postgres:postgres@192.168.248.244:5432' \
   --publish 3000:3000 \
+  --name rails-template-test \
   -it bradfeehan/rails-template:local \
     bash -xc " \
       git config --global user.email 'git@bradfeehan.com' && \
