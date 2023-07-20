@@ -121,6 +121,7 @@ gem 'paper_trail'
 gem 'pgcli-rails'
 gem 'pundit'
 gem 'rodauth-rails'
+gem 'sassc-rails'
 gem 'sorbet-runtime'
 
 gem_group :development do
