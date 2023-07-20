@@ -355,7 +355,7 @@ docker run --rm \
   -v "${HOME}/Code/bradfeehan/rails-template:/template:ro" \
   --workdir '/app' \
   --platform linux/amd64 \
-  -e DATABASE_URL='postgresql://postgres:postgres@db:5432' \
+  -e DATABASE_URL='postgresql://postgres:postgres@192.168.248.244:5432' \
   --publish 3000:3000 \
   -it bradfeehan/rails-template:local \
     bash -xc " \

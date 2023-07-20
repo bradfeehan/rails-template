@@ -117,6 +117,7 @@ gem 'good_job'
 gem 'gretel'
 gem 'lograge'
 gem 'pagy', '~> 6.0'
+gem 'paper_trail'
 gem 'pgcli-rails'
 gem 'pundit'
 gem 'rodauth-rails'
@@ -221,6 +222,21 @@ after_bundle do
   git_commit 'Setup Pagy', %w[--no-verify]
 
   ########################################
+  # Paper Trail
+  ########################################
+
+  generate 'paper_trail:install', '--with-changes'
+
+  create_versions_migration = Dir.glob(File.expand_path('db/migrate/*_create_versions.rb', destination_root)).first
+  gsub_file create_versions_migration, /^(\s*t\.)text(\s*:object),\s*limit:.*$/, '\1jsonb\2'
+
+  add_object_changes_migration = Dir.glob(File.expand_path('db/migrate/*_add_object_changes_to_versions.rb', destination_root)).first
+  gsub_file add_object_changes_migration, /^(\s*add_column\s*:versions,\s*:object_changes,\s*:)text,\s*limit:.*$/, '\1jsonb'
+
+  git add: '--all'
+  git_commit 'Setup Paper Trail', %w[--no-verify]
+
+  ########################################
   # Pundit
   ########################################
 
@@ -271,6 +287,11 @@ after_bundle do
   ########################################
 
   generate 'rspec:install'
+
+  inject_into_file 'spec/rails_helper.rb', after: "  # Add additional requires below this line\n" do
+    "  require 'paper_trail/frameworks/rspec'\n"
+  end
+
   git add: '--all'
   git_commit 'rails generate rspec:install', %w[--no-verify]
 
