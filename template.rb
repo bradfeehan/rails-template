@@ -117,6 +117,7 @@ gem 'gretel'
 gem 'lograge'
 gem 'pagy', '~> 6.0'
 gem 'pgcli-rails'
+gem 'pundit'
 gem 'rodauth-rails'
 gem 'sorbet-runtime'
 
@@ -195,15 +196,39 @@ after_bundle do
 
   # Pagy setup
   copy_file 'config/initializers/pagy.rb'
+
   inject_into_class 'app/controllers/application_controller.rb', 'ApplicationController' do
     "  include Pagy::Backend\n"
   end
+
   inject_into_module 'app/helpers/application_helper.rb', 'ApplicationHelper' do
     "  include Pagy::Frontend\n"
   end
+
   application "Rails.application.config.assets.paths << Pagy.root.join('javascripts')"
   git add: '--all'
   git_commit 'Setup Pagy', %w[--no-verify]
+
+  ########################################
+  # Pundit
+  ########################################
+
+  generate 'pundit:install'
+
+  inject_into_class 'app/controllers/application_controller.rb', 'ApplicationController' do
+    "  include Pundit::Authorization\n"
+  end
+
+  inject_into_file 'app/policies/application_policy.rb', before: "class ApplicationPolicy\n" do
+    "# Base policy class for Pundit\n"
+  end
+
+  inject_into_file 'app/policies/application_policy.rb', before: "  class Scope\n" do
+    "  # Base abstract policy scope class for Pundit\n"
+  end
+
+  git add: '--all'
+  git_commit 'Setup Pundit', %w[--no-verify]
 
   ########################################
   # Rodauth
