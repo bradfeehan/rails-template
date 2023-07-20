@@ -348,7 +348,9 @@ fi
 
 root="${HOME}/Code/bradfeehan/new"
 rm -rf "${root}"
+sleep 0.3
 mkdir "${root}"
+sleep 0.3
 cd "${root}"
 docker run --rm \
   -v "${root}:/app" \
