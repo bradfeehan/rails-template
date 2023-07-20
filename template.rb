@@ -156,6 +156,12 @@ after_bundle do
   git add: '--all'
   git_commit 'bundle install', %w[--no-verify]
 
+  rails_command 'db:reset'
+  rails_command 'db:migrate'
+  rails_command 'db:seed'
+  git add: '--all'
+  git_commit 'rails db:reset db:migrate db:seed', %w[--no-verify]
+
   run 'bundle cache'
   git add: '--all'
   git_commit 'bundle cache', %w[--no-verify]
