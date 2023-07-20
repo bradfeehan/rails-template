@@ -113,6 +113,7 @@ gsub_file 'Gemfile', /^ruby\s.*$/, %q(ruby "~> #{File.read(File.expand_path('.ru
 gem 'active_decorator'
 gem 'argon2'
 gem 'good_job'
+gem 'gretel'
 gem 'lograge'
 gem 'pagy', '~> 6.0'
 gem 'pgcli-rails'
@@ -179,6 +180,14 @@ after_bundle do
     PUMA_MAIN_PID = Process.pid
     at_exit { GoodJob.shutdown if Process.pid == PUMA_MAIN_PID }
   END
+
+  ########################################
+  # Gretel
+  ########################################
+
+  generate 'gretel:install'
+  git add: '--all'
+  git_commit 'Setup Gretel', %w[--no-verify]
 
   ########################################
   # Pagy
