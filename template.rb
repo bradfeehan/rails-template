@@ -111,10 +111,12 @@ gsub_file 'Gemfile', /^ruby\s.*$/, %q(ruby "~> #{File.read(File.expand_path('.ru
 
 # Extra dependencies
 gem 'active_decorator'
+gem 'argon2'
 gem 'good_job'
 gem 'lograge'
 gem 'pagy', '~> 6.0'
 gem 'pgcli-rails'
+gem 'rodauth-rails'
 gem 'sorbet-runtime'
 
 gem_group :development do
@@ -193,6 +195,31 @@ after_bundle do
   application "Rails.application.config.assets.paths << Pagy.root.join('javascripts')"
   git add: '--all'
   git_commit 'Setup Pagy', %w[--no-verify]
+
+  ########################################
+  # Rodauth
+  ########################################
+
+  generate "rodauth:install --argon2"
+
+  inject_into_file "app/misc/rodauth_app.rb", before: "class RodauthApp < Rodauth::Rails::App\n" do
+    "# Rodauth app class\n"
+  end
+
+  inject_into_file "app/misc/rodauth_main.rb", before: "class RodauthMain < Rodauth::Rails::Auth\n" do
+    "# Rodauth main class\n"
+  end
+
+  inject_into_file "app/models/account.rb", before: "class Account < ApplicationRecord\n" do
+    "# Rodauth account which is able to log in to the site\n"
+  end
+
+  inject_into_file "app/mailers/rodauth_mailer.rb", before: "class RodauthMailer < ApplicationMailer" do
+    "# Base mailer class for mail sent from Rodauth\n"
+  end
+
+  git add: '--all'
+  git_commit 'rails generate rodauth:install --argon2', %w[--no-verify]
 
   ########################################
   # RSpec

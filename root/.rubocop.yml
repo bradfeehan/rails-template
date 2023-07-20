@@ -19,6 +19,18 @@ require:
 AllCops:
   NewCops: enable
 
+Layout/LineEndStringConcatenationIndentation:
+  EnforcedStyle: indented
+
+Layout/LineLength:
+  Exclude:
+    - app/misc/rodauth_main.rb
+    - db/migrate/*.rb
+    - db/schema.rb
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
 Metrics/AbcSize:
   Max: 20
   Exclude:
@@ -26,6 +38,7 @@ Metrics/AbcSize:
 
 Metrics/BlockLength:
   Exclude:
+    - app/misc/rodauth_main.rb
     - config/environments/*.rb
     - config/routes.rb
     - db/schema.rb
@@ -42,16 +55,9 @@ Metrics/MethodLength:
 Metrics/PerceivedComplexity:
   Max: 10
 
-Layout/LineEndStringConcatenationIndentation:
-  EnforcedStyle: indented
-
-Layout/LineLength:
+Rails/CreateTableWithTimestamps:
   Exclude:
-    - db/migrate/*.rb
-    - db/schema.rb
-
-Layout/MultilineMethodCallIndentation:
-  EnforcedStyle: indented
+    - db/migrate/*_create_rodauth.rb
 
 Style/Documentation:
   Exclude:
