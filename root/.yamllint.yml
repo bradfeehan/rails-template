@@ -3,4 +3,5 @@ extends: default
 ignore: |
   /config/storage.yml
   /charts/
+  /node_modules/
   /vendor/

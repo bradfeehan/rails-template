@@ -67,6 +67,22 @@ git add: '.dockerignore Dockerfile docker-compose*.yml vendor/keys'
 git_commit 'Setup Docker'
 
 ########################################
+# VS Code Dev Container
+########################################
+
+directory '.devcontainer'
+git add: '.devcontainer'
+git_commit 'Setup VS Code Dev Container'
+
+########################################
+# GitHub Actions
+########################################
+
+directory '.github'
+git add: '.github'
+git_commit 'Setup GitHub Actions workflows'
+
+########################################
 # Pre-commit hook
 ########################################
 
@@ -84,22 +100,6 @@ run 'ln -s ../../bin/pre-commit .git/hooks'
 git_commit 'Setup pre-commit hook and linters'
 
 ########################################
-# VS Code Dev Container
-########################################
-
-directory '.devcontainer'
-git add: '.devcontainer'
-git_commit 'Setup VS Code Dev Container'
-
-########################################
-# GitHub Actions
-########################################
-
-directory '.github'
-git add: '.github'
-git_commit 'Setup GitHub Actions workflows'
-
-########################################
 # Rails new
 ########################################
 
@@ -110,7 +110,6 @@ git_commit 'rails new', %w[--no-verify]
 gsub_file 'Gemfile', /^ruby\s.*$/, %q(ruby "~> #{File.read(File.expand_path('.ruby-version', __dir__)).split('-').last}")
 
 # Extra dependencies
-gem 'activeadmin'
 gem 'active_decorator'
 gem 'argon2'
 gem 'good_job'
@@ -120,8 +119,8 @@ gem 'pagy', '~> 6.0'
 gem 'paper_trail'
 gem 'pgcli-rails'
 gem 'pundit'
+gem 'rails_admin'
 gem 'rodauth-rails'
-gem 'sassc-rails'
 gem 'sorbet-runtime'
 
 gem_group :development do
@@ -156,12 +155,6 @@ after_bundle do
   git add: '--all'
   git_commit 'bundle install', %w[--no-verify]
 
-  rails_command 'db:reset'
-  rails_command 'db:migrate'
-  rails_command 'db:seed'
-  git add: '--all'
-  git_commit 'rails db:reset db:migrate db:seed', %w[--no-verify]
-
   run 'bundle cache'
   git add: '--all'
   git_commit 'bundle cache', %w[--no-verify]
@@ -170,14 +163,55 @@ after_bundle do
   run_and_commit 'bin/bundle binstubs rspec-core rubocop sorbet tapioca', %w[--no-verify]
 
   ########################################
-  # Active Admin
+  # Assets
   ########################################
 
-  generate 'active_admin:install', '--skip-users'
-  # generate 'active_admin:resource', 'Account'
+  run 'yarn add autoprefixer chokidar postcss @csstools/postcss-sass postcss-flexbugs-fixes tailwindcss @tailwindcss/forms @tailwindcss/typography @fortawesome/fontawesome-free'
+  inject_into_file 'postcss.config.js', after: "  plugins: [" do
+    [
+      "require('postcss-import')",
+      "require('@csstools/postcss-sass')",
+      "require('tailwindcss')",
+      "require('autoprefixer')",
+      "require('postcss-nested')",
+      "require('postcss-flexbugs-fixes')",
+    ].map { |line| "    #{line},\n" }.join
+  end
+
+  copy_file 'tailwind.config.js'
+  copy_file 'esbuild.config.js'
+
+  copy_file 'app/assets/stylesheets/application.tailwind.css'
+  inject_into_file 'app/assets/stylesheets/application.postcss.css' do
+    "@import 'application.tailwind.css';\n"
+  end
 
   git add: '--all'
-  git_commit 'rails generate active_admin:install', %w[--no-verify]
+  git_commit 'Configure PostCSS', %w[--no-verify]
+
+  ########################################
+  # Rails Admin
+  ########################################
+
+  route "mount RailsAdmin::Engine => '/admin', as: 'rails_admin'"
+  inject_into_file 'config/initializers/assets.rb', "Rails.application.config.assets.paths << Rails.root.join('node_modules/@fortawesome/fontawesome-free/webfonts')\n"
+  copy_file 'config/initializers/rails_admin.rb'
+  run "yarn add rails_admin@3.1.2"
+  copy_file 'app/javascript/rails_admin.js'
+
+  git add: '--all'
+  git_commit 'rails generate rails_admin:install', %w[--no-verify]
+
+  ########################################
+  # Set up database
+  ########################################
+
+  rails_command 'db:reset'
+  rails_command 'db:migrate'
+  rails_command 'db:seed'
+
+  git add: '--all'
+  git_commit 'rails db:reset db:migrate db:seed', %w[--no-verify]
 
   ########################################
   # good_job
@@ -295,7 +329,7 @@ after_bundle do
 
   generate 'rspec:install'
 
-  inject_into_file 'spec/rails_helper.rb', after: "  # Add additional requires below this line\n" do
+  inject_into_file 'spec/rails_helper.rb', after: "  # Add additional requires below this line. Rails is not loaded until this point!\n" do
     "  require 'paper_trail/frameworks/rspec'\n"
   end
 

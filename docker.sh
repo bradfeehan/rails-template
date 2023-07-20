@@ -367,5 +367,5 @@ docker run --rm \
       git config --global user.name 'Brad Feehan' && \
       export 'BUNDLE_JOBS=32' && \
       export 'DATABASE_URL=postgresql://postgres:postgres@192.168.248.244:5432' && \
-      rails new --template '/template/template.rb' --database postgresql --css tailwind --skip-test --skip-system-test . && \
+      rails new --template '/template/template.rb' --database postgresql --css postcss --javascript esbuild --asset-pipeline propshaft --skip-test --skip-system-test . && \
       bin/dev"
