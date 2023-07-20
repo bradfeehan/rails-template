@@ -150,7 +150,12 @@ lint_run 'Git' 'in_path git' 'brew install git' env -i git -C "${ROOT}" diff-ind
 # Check for any "forbidden" files
 lint_run 'File names' 'in_path bash' 'brew install bash' "${ROOT}/bin/filename-check" "${WORKING_DIRECTORY}"
 
-lint_run 'actionlint' 'in_path actionlint' 'brew install actionlint' actionlint -color
+if [[ -d "${WORKING_DIRECTORY}/.github/actions" || -d "${WORKING_DIRECTORY}/.github/workflows" ]]; then
+  lint_run 'actionlint' 'in_path actionlint' 'brew install actionlint' actionlint -color
+else
+  lint_missing 'actionlint' 'Create .github/workflows'
+fi
+
 lint_run 'Hadolint' 'in_path hadolint' 'brew install hadolint' hadolint Dockerfile
 lint_run 'JSON Schema' 'in_path v8r' 'npm install -g v8r' bash -c 'v8r 2> /dev/null'
 lint_run 'Rubocop' 'bundle check > /dev/null' 'bundle install' env BUNDLE_GEMFILE="${ROOT}/Gemfile" bundle exec rubocop --format quiet
