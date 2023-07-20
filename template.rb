@@ -110,6 +110,7 @@ git_commit 'rails new', %w[--no-verify]
 gsub_file 'Gemfile', /^ruby\s.*$/, %q(ruby "~> #{File.read(File.expand_path('.ruby-version', __dir__)).split('-').last}")
 
 # Extra dependencies
+gem 'activeadmin'
 gem 'active_decorator'
 gem 'argon2'
 gem 'good_job'
@@ -159,6 +160,16 @@ after_bundle do
 
   # Generate binstubs
   run_and_commit 'bin/bundle binstubs rspec-core rubocop sorbet tapioca', %w[--no-verify]
+
+  ########################################
+  # Active Admin
+  ########################################
+
+  generate 'active_admin:install', '--skip-users'
+  # generate 'active_admin:resource', 'Account'
+
+  git add: '--all'
+  git_commit 'rails generate active_admin:install', %w[--no-verify]
 
   ########################################
   # good_job
@@ -278,8 +289,9 @@ after_bundle do
 
   rails_command 'db:reset'
   rails_command 'db:migrate'
+  rails_command 'db:seed'
   git add: '--all'
-  git_commit 'rails db:reset db:migrate', %w[--no-verify]
+  git_commit 'rails db:reset db:migrate db:seed', %w[--no-verify]
 
   ########################################
   # Sorbet
