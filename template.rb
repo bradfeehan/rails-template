@@ -67,14 +67,6 @@ git add: '.dockerignore Dockerfile docker-compose*.yml vendor/keys'
 git_commit 'Setup Docker'
 
 ########################################
-# VS Code Dev Container
-########################################
-
-directory '.devcontainer'
-git add: '.devcontainer'
-git_commit 'Setup VS Code Dev Container'
-
-########################################
 # GitHub Actions
 ########################################
 
