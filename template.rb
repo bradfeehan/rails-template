@@ -166,28 +166,41 @@ after_bundle do
   # Assets
   ########################################
 
-  run 'yarn add autoprefixer chokidar @csstools/postcss-sass @fortawesome/fontawesome-free postcss postcss-flexbugs-fixes postcss-nesting postcss-scss tailwindcss @tailwindcss/forms @tailwindcss/typography'
-  gsub_file 'package.json', /^(\s*"build:css":\s*"postcss).*$/, '\1 --parser sass app/assets/stylesheets --base --dir app/assets/builds --ext css"'
+  run 'yarn add autoprefixer chokidar @csstools/postcss-sass @fortawesome/fontawesome-free postcss postcss-flexbugs-fixes postcss-scss postcss-url tailwindcss @tailwindcss/forms @tailwindcss/typography'
+  gsub_file 'package.json', /^(\s*"build:css":\s*"postcss).*$/, '\1 app/assets/stylesheets --base --dir app/assets/builds --ext css"'
+
+  prepend_to_file 'postcss.config.js', "const path = require('node:path');\n"
 
   inject_into_file 'postcss.config.js', before: "  plugins: [\n" do
     "  syntax: 'postcss-scss',\n"
   end
 
   inject_into_file 'postcss.config.js', after: "  plugins: [\n" do
-    [
-      "require('@csstools/postcss-sass')",
-      "require('tailwindcss')",
-      "require('postcss-flexbugs-fixes')",
-    ].map { |line| "    #{line},\n" }.join
+    <<~EOF
+      require('@csstools/postcss-sass')({
+        includePaths: [
+          "node_modules",
+          "app/assets/stylesheets",
+        ],
+      }),
+      require('postcss-url')({
+        url: 'copy',
+        basePath: path.resolve('node_modules'),
+        assetsPath: path.resolve('app/assets/builds'),
+        useHash: false,
+      }),
+      require('tailwindcss'),
+      require('postcss-flexbugs-fixes'),
+    EOF
   end
+
+  run 'yarn remove postcss-nesting'
+  gsub_file 'postcss.config.js', /\s*require\('postcss-nesting'\),/, ''
 
   copy_file 'tailwind.config.js'
-  copy_file 'esbuild.config.js'
 
-  copy_file 'app/assets/stylesheets/application.tailwind.css'
-  inject_into_file 'app/assets/stylesheets/application.postcss.css' do
-    "@import 'application.tailwind.css';\n"
-  end
+  remove_file 'app/assets/stylesheets/application.postcss.css'
+  copy_file 'app/assets/stylesheets/application.css'
 
   git add: '--all'
   git_commit 'Configure PostCSS', %w[--no-verify]
@@ -197,7 +210,9 @@ after_bundle do
   ########################################
 
   route "mount RailsAdmin::Engine => '/admin', as: 'rails_admin'"
-  inject_into_file 'config/initializers/assets.rb', "Rails.application.config.assets.paths << Rails.root.join('node_modules/@fortawesome/fontawesome-free/webfonts')\n"
+  inject_into_file 'config/initializers/assets.rb', <<~EOF
+    Rails.application.config.assets.paths << Rails.root.join('node_modules/@fortawesome/fontawesome-free/webfonts')
+  EOF
   copy_file 'config/initializers/rails_admin.rb'
   run "yarn add rails_admin@3.1.2"
   copy_file 'app/javascript/rails_admin.js'
