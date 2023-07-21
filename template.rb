@@ -333,7 +333,7 @@ after_bundle do
 
   generate 'rspec:install'
 
-  inject_into_file 'spec/rails_helper.rb', after: "  # Add additional requires below this line. Rails is not loaded until this point!\n" do
+  inject_into_file 'spec/rails_helper.rb', after: "# Add additional requires below this line. Rails is not loaded until this point!\n" do
     "  require 'paper_trail/frameworks/rspec'\n"
   end
 
