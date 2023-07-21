@@ -352,16 +352,24 @@ EOF
 fi
 
 root="${HOME}/Code/bradfeehan/new"
-rm -rf "${root}"
-sleep 0.3
-mkdir "${root}"
-sleep 0.3
+
+restart=1
+
+if [[ "${restart}" ]]; then
+  rm -rf "${root}"
+  sleep 0.3
+  mkdir "${root}"
+  sleep 0.3
+fi
+
 cd "${root}"
 printf '%s\n' '' rails-template-test ''
+
+if [[ "${restart}" ]]; then
 docker run --rm \
-  -v "${root}:/app" \
+  -v "${root}:/myapp" \
   -v "${HOME}/Code/bradfeehan/rails-template:/template:ro" \
-  --workdir '/app' \
+  --workdir '/myapp' \
   --platform linux/amd64 \
   -e DATABASE_URL='postgresql://postgres:postgres@192.168.248.244:5432' \
   --publish 3000:3000 \
@@ -373,4 +381,21 @@ docker run --rm \
       export 'BUNDLE_JOBS=32' && \
       export 'DATABASE_URL=postgresql://postgres:postgres@192.168.248.244:5432' && \
       rails new --template '/template/template.rb' --database postgresql --css postcss --javascript esbuild --asset-pipeline propshaft --skip-test --skip-system-test . && \
-      bin/dev"
+      bin/dev || bash -i"
+else
+  docker run --rm \
+    -v "${root}:/myapp" \
+    -v "${HOME}/Code/bradfeehan/rails-template:/template:ro" \
+    --workdir '/myapp' \
+    --platform linux/amd64 \
+    -e DATABASE_URL='postgresql://postgres:postgres@192.168.248.244:5432' \
+    --publish 3000:3000 \
+    --name rails-template-test \
+    -it bradfeehan/rails-template:local \
+      bash -xc " \
+        git config --global user.email 'git@bradfeehan.com' && \
+        git config --global user.name 'Brad Feehan' && \
+        export 'BUNDLE_JOBS=32' && \
+        export 'DATABASE_URL=postgresql://postgres:postgres@192.168.248.244:5432' && \
+        bundle && bin/dev"
+fi
