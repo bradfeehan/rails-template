@@ -378,6 +378,5 @@ after_bundle do
   # Sorbet
   ########################################
 
-  # TODO: uncomment
-  # run_and_commit 'bin/bundle exec tapioca init', %w[--no-verify]
+  run_and_commit 'bin/bundle exec tapioca init', %w[--no-verify]
 end
