@@ -155,6 +155,13 @@ after_bundle do
   git add: '--all'
   git_commit 'bundle install', %w[--no-verify]
 
+  %w[arm64-darwin-22 ruby x86_64-linux].each do |platform|
+    run "bundle lock --add-platform #{platform}"
+  end
+
+  run 'bundle install'
+  git_commit 'bundle lock --add-platform {arm64-darwin-22,ruby,x86_64-linux}', %w[--no-verify]
+
   run 'bundle cache'
   git add: '--all'
   git_commit 'bundle cache', %w[--no-verify]

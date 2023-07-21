@@ -2,11 +2,12 @@
 version: "3.9"
 services:
   web:
-    image: registry.fly.io/<%= app_name %>:latest
+    # image: registry.fly.io/<%= app_name %>:latest
+    platform: "linux/amd64"
     build:
       context: .
-      cache_from:
-        - registry.fly.io/<%= app_name %>:latest
+      # cache_from:
+      #   - registry.fly.io/<%= app_name %>:latest
     command: [bundle, exec, rails, server]
     depends_on:
       - db

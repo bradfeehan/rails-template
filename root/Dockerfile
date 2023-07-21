@@ -4,7 +4,7 @@ ARG DEBIAN_RELEASE=bullseye
 ########################################
 ## ruby: The upstream ruby base image
 ########################################
-FROM ruby:3.2-slim-bullseye@sha256:81743b016046dd7e6fe55b3b408ac37735786c9dff409ca2191daffa0a66fa7e as ruby
+FROM ruby:3.2-slim-bullseye@sha256:428867de4fe3a3d95eccb6bb09171cf28f55aca2b264dba433c1321a12100400 as ruby
 
 ########################################
 ## base: Our base with Ruby, Node, etc.

@@ -3,6 +3,7 @@ version: "3.9"
 x-dev:
   &service-dev
   image: registry.fly.io/<%= app_name %>:latest
+  platform: "linux/amd64"
   environment:
     - APP_EMAIL_FROM=debug@example.com
     - APP_HOST=localhost
