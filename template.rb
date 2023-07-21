@@ -166,14 +166,17 @@ after_bundle do
   # Assets
   ########################################
 
-  run 'yarn add autoprefixer chokidar postcss @csstools/postcss-sass postcss-flexbugs-fixes tailwindcss @tailwindcss/forms @tailwindcss/typography @fortawesome/fontawesome-free'
-  inject_into_file 'postcss.config.js', after: "  plugins: [" do
+  run 'yarn add autoprefixer chokidar @csstools/postcss-sass @fortawesome/fontawesome-free postcss postcss-flexbugs-fixes postcss-nesting postcss-scss tailwindcss @tailwindcss/forms @tailwindcss/typography'
+  gsub_file 'package.json', /^(\s*"build:css":\s*"postcss).*$/, '\1 --parser sass app/assets/stylesheets --base --dir app/assets/builds --ext css"'
+
+  inject_into_file 'postcss.config.js', before: "  plugins: [\n" do
+    "  syntax: 'postcss-scss',\n"
+  end
+
+  inject_into_file 'postcss.config.js', after: "  plugins: [\n" do
     [
-      "require('postcss-import')",
       "require('@csstools/postcss-sass')",
       "require('tailwindcss')",
-      "require('autoprefixer')",
-      "require('postcss-nested')",
       "require('postcss-flexbugs-fixes')",
     ].map { |line| "    #{line},\n" }.join
   end
@@ -198,6 +201,7 @@ after_bundle do
   copy_file 'config/initializers/rails_admin.rb'
   run "yarn add rails_admin@3.1.2"
   copy_file 'app/javascript/rails_admin.js'
+  copy_file 'app/assets/stylesheets/rails_admin.scss'
 
   git add: '--all'
   git_commit 'rails generate rails_admin:install', %w[--no-verify]

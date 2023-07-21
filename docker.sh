@@ -341,6 +341,11 @@ RUN yarn global add v8r && \
       mv hadolint-Linux-x86_64 /usr/local/bin/hadolint && \
       chmod +x /usr/local/bin/hadolint
 
+RUN curl -LSsO 'https://github.com/rbspy/rbspy/releases/download/v0.17.0/rbspy-x86_64-unknown-linux-gnu.tar.gz' && \
+      tar -xzf 'rbspy-x86_64-unknown-linux-gnu.tar.gz' && \
+      mv 'rbspy-x86_64-unknown-linux-gnu' /usr/local/bin/rbspy && \
+      rm -f 'rbspy-x86_64-unknown-linux-gnu.tar.gz'
+
 WORKDIR /app
 CMD ["/bin/bash"]
 EOF
