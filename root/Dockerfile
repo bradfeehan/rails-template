@@ -124,7 +124,6 @@ COPY --from=rubygems "${GEM_HOME}" "${GEM_HOME}"
 COPY --from=app --chown=ruby:ruby /app /app
 
 RUN env \
-  SECRET_KEY_BASE="$(bin/rake secret)" \
   RAILS_ENV=production \
   bin/rails assets:precompile
 
