@@ -23,7 +23,7 @@ git_commit <<~MSG, %w[--allow-empty]
   Initial commit
 
   Empty initial commit to allow rebasing later.
-  See: https://coderwall.com/p/m_pgbg
+  See: https://www.garfieldtech.com/blog/git-empty-commit
 MSG
 
 ########################################
