@@ -26,6 +26,8 @@ git_commit <<~MSG, %w[--allow-empty]
   See: https://www.garfieldtech.com/blog/git-empty-commit
 MSG
 
+git tag: 'init'
+
 ########################################
 # Editor Config
 ########################################
